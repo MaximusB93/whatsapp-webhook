@@ -9,11 +9,17 @@ GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTguj7UsMoXgNLfmWp
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json
-    
-    phone = data.get('author') or data.get('chatId') or 'unknown'
+
+    messages = data.get('messages', [])
+    if not messages:
+        return 'No messages', 400
+
+    message_data = messages[0]
+
+    phone = message_data.get('from') or message_data.get('chatId') or 'unknown'
     phone = phone.split('@')[0] if '@' in phone else phone
-    message = data.get('body') or 'пустое сообщение'
-    timestamp = datetime.fromtimestamp(data.get('time', datetime.now().timestamp())).strftime('%Y-%m-%d %H:%M:%S')
+    message = message_data.get('body') or 'пустое сообщение'
+    timestamp = datetime.fromtimestamp(message_data.get('time', datetime.now().timestamp())).strftime('%Y-%m-%d %H:%M:%S')
 
     params = {
         'phone': phone,
