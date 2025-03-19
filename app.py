@@ -10,9 +10,10 @@ GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTguj7UsMoXgNLfmWp
 def webhook():
     data = request.json
     
-    phone = data.get('chatId', 'unknown').split('@')[0]
-    message = data.get('body', '')
-    timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    phone = data.get('author') or data.get('chatId') or 'unknown'
+    phone = phone.split('@')[0] if '@' in phone else phone
+    message = data.get('body') or 'пустое сообщение'
+    timestamp = datetime.fromtimestamp(data.get('time', datetime.now().timestamp())).strftime('%Y-%m-%d %H:%M:%S')
 
     params = {
         'phone': phone,
@@ -20,7 +21,6 @@ def webhook():
         'timestamp': timestamp
     }
 
-    # Отправляем данные в Google Sheets
     requests.get(GOOGLE_SCRIPT_URL, params=params)
 
     return 'OK', 200
