@@ -9,23 +9,36 @@ GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzTguj7UsMoXgNLfmWp
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.json
+    print("Полученные данные:", data)
 
     messages = data.get('messages', [])
     if not messages:
+        print("Нет сообщений в данных!")
         return 'No messages', 400
 
     message_data = messages[0]
 
-    phone = message_data.get('from') or message_data.get('chatId') or 'unknown'
+    # Корректные ключи именно из ваших данных
+    phone = message_data.get('from') or message_data.get('chatId') or message_data.get('author') or 'unknown'
+    message = message_data.get('body') or message_data.get('caption') or 'пустое сообщение'
+
+    # Обработка поля времени
+    timestamp_unix = message_data.get('time')
+    if timestamp_unix:
+        timestamp = datetime.fromtimestamp(timestamp_unix).strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # Если номер телефона содержит '@', удалим
     phone = phone.split('@')[0] if '@' in phone else phone
-    message = message_data.get('body') or 'пустое сообщение'
-    timestamp = datetime.fromtimestamp(message_data.get('time', datetime.now().timestamp())).strftime('%Y-%m-%d %H:%M:%S')
 
     params = {
         'phone': phone,
         'message': message,
         'timestamp': timestamp
     }
+
+    print("Отправляемые параметры в Google Sheets:", params)
 
     requests.get(GOOGLE_SCRIPT_URL, params=params)
 
